@@ -145,7 +145,7 @@ class PostsTableTest extends TestCase
             $this->assertEquals(
                 $author,
                 $result,
-                'Every associated Comment should be from the expected Author.'
+                'Every associated Comment should be from the single expected Author, but this fails because the contain(Comments) from findCommenter() has been wiped out by the contain(Comments) from findRecent().'
             );
         }
 
@@ -157,5 +157,26 @@ class PostsTableTest extends TestCase
                 'Every associated Comment should have been published within the last 7 days.'
             );
         }
+    }
+
+    /**
+     * Test ResultSet::extract() on sub-Entities.
+     *
+     * @return void
+     */
+    public function testResultSetExtract()
+    {
+        $expected = [
+            0 => 'John Doe',
+            1 => 'Jane Doe',
+        ];
+
+        $results = $this->Posts->find()->all();
+
+        $this->assertEquals(
+            $expected,
+            $results->extract('{n}.comments.{n}.author')->toArray(),
+            'Why doesn\'t CollectionTrait::extract() work on sub-Entities?? What incantation is necessary to make this work?'
+        );
     }
 }
