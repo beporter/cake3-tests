@@ -39,12 +39,17 @@ class PostsFixture extends TestFixture
         [
             'id' => 1,
             'title' => 'First Post',
-            'body' => 'This is a post.'
+            'body' => 'This is a post. It has comments from multiple authors.'
         ],
         [
             'id' => 2,
-            'title' => 'Second Post',
-            'body' => 'This is another post.'
+            'title' => 'Post with No Comments',
+            'body' => 'This is another post that has zero comments.'
+        ],
+        [
+            'id' => 3,
+            'title' => 'Post with Comments from Single author',
+            'body' => 'This Post has comments exclusively from a single author.'
         ],
     ];
 }

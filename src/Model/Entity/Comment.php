@@ -18,6 +18,7 @@ class Comment extends Entity
         'post_id' => true,
         'author' => true,
         'body' => true,
+        'published_date' => true,
         'post' => true,
     ];
 }

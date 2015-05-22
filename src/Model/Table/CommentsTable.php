@@ -41,13 +41,17 @@ class CommentsTable extends Table
         $validator
             ->add('id', 'valid', ['rule' => 'numeric'])
             ->allowEmpty('id', 'create');
-
+            
         $validator
             ->requirePresence('author', 'create')
             ->notEmpty('author');
-
+            
         $validator
             ->allowEmpty('body');
+            
+        $validator
+            ->add('published_date', 'valid', ['rule' => 'date'])
+            ->allowEmpty('published_date');
 
         return $validator;
     }

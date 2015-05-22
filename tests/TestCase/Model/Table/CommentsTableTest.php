@@ -41,7 +41,6 @@ class CommentsTableTest extends TestCase
     public function tearDown()
     {
         unset($this->Comments);
-
         parent::tearDown();
     }
 
