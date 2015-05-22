@@ -2,8 +2,10 @@
 namespace App\Test\TestCase\Model\Table;
 
 use App\Model\Table\PostsTable;
+use Cake\I18n\Time;
 use Cake\ORM\TableRegistry;
 use Cake\TestSuite\TestCase;
+use Cake\Utility\Hash;
 
 /**
  * App\Model\Table\PostsTable Test Case
@@ -41,27 +43,119 @@ class PostsTableTest extends TestCase
     public function tearDown()
     {
         unset($this->Posts);
-
         parent::tearDown();
     }
 
     /**
-     * Test initialize method
+     * Test the custom findCommenter() method with a valid Comment.author.
      *
      * @return void
      */
-    public function testInitialize()
+    public function testFindCommenterWithValidAuthor()
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $author = 'John Doe';
+        $results = $this->Posts->find('commenter', [$author])->hydrate(false)->all();
+        $this->assertEquals(
+            $this->Posts->find()->count(),
+            $results->count(),
+            'All Posts fixture records should be returned regardless of comments.'
+        );
+
+        $authors = Hash::extract($results->toArray(), '{n}.comments.{n}.author');
+        $this->assertTrue(
+            array_reduce($authors, function ($carry, $v) {
+                if (!$carry) {
+                	return false;
+                }
+                return ($v === 'John Doe');
+            }, true),
+            'Every associated Comment should be from the expected Author.'
+        );
     }
 
     /**
-     * Test validationDefault method
+     * Test the custom findCommenter() method with an invalid Comment.author.
      *
      * @return void
      */
-    public function testValidationDefault()
+    public function testFindCommenterWithInvalidAuthor()
     {
-        $this->markTestIncomplete('Not implemented yet.');
+        $author = 'Not In Fixtures';
+        $results = $this->Posts->find('commenter', [$author])->hydrate(false)->all();
+        $this->assertEquals(
+            $this->Posts->find()->count(),
+            $results->count(),
+            'All Posts fixture records should be returned regardless of comments.'
+        );
+
+        $authors = Hash::extract($results->toArray(), '{n}.comments.{n}.author');
+        $this->assertEquals(
+            0,
+            count($authors),
+            'There should be zero Comment.authors returned for an invalid lookup value.'
+        );
+    }
+
+    /**
+     * Test the custom findRecent() method.
+     *
+     * @return void
+     */
+    public function testFindRecent()
+    {
+        $results = $this->Posts->find('recent')->hydrate(false)->all();
+        $this->assertEquals(
+            $this->Posts->find()->count(),
+            $results->count(),
+            'All Posts fixture records should be returned regardless of comments.'
+        );
+
+        $commentDates = Hash::extract($results->toArray(), '{n}.comments.{n}.published_date');
+        $this->assertTrue(
+            array_reduce($commentDates, function ($carry, $v) {
+                if (!$carry) {
+                	return false;
+                }
+                return ($v >= new Time('7 days ago'));
+            }, true),
+            'Every associated Comment should have been published within the last 7 days.'
+        );
+    }
+
+    /**
+     * Test the composition of both findCommenter() and findRecent().
+     *
+     * @return void
+     */
+    public function testFindCommenterAndFindRecent()
+    {
+        $author = 'Jane Doe';
+        $results = $this->Posts
+            ->find('commenter', [$author]) // The order matters here.
+            ->find('recent') // This will wipe out the containment from findCommenter().
+            ->hydrate(false)->all();
+        $this->assertEquals(
+            $this->Posts->find()->count(),
+            $results->count(),
+            'All Posts fixture records should be returned regardless of comments.'
+        );
+
+        $authors = Hash::extract($results->toArray(), '{n}.comments.{n}.author');
+        foreach ($authors as $result) {
+            $this->assertEquals(
+                $author,
+                $result,
+                'Every associated Comment should be from the expected Author.'
+            );
+        }
+
+        $commentDates = Hash::extract($results->toArray(), '{n}.comments.{n}.published_date');
+        $cutOff = new Time('7 days ago');
+        foreach ($commentDates as $result) {
+            $this->assertTrue(
+                ($result >= $cutoff),
+                'Every associated Comment should have been published within the last 7 days.'
+            );
+        }
     }
 }

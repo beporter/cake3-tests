@@ -2,6 +2,7 @@
 namespace App\Model\Table;
 
 use App\Model\Entity\Post;
+use Cake\I18n\Time;
 use Cake\ORM\Query;
 use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
@@ -52,16 +53,18 @@ class PostsTable extends Table
     }
 
     /**
-     * Custom finder that selects Posts with Comments from a given `author`.
+     * Custom finder that filters associated Comments to a given `author`.
      *
-     * Usage: `$Post->find('author', ['John Doe']);`
+     * Used by admins to review a commenter's contributions across all
+     * Posts to look for signs of harrassing behavior.
+     *
+     * Usage: `$Posts->find('commenter', ['John Doe']);`
      *
      * @param \Cake\ORM\Query $query The query to find with.
      * @param  array $options First element expected to be a Comment.author.
      * @return \Cake\ORM\Query The modified query.
      */
-     */
-    public function findAuthor(Query $query, array $options)
+    public function findCommenter(Query $query, array $options)
     {
         if (!count($options)) {
         	return $query;
@@ -69,9 +72,29 @@ class PostsTable extends Table
         $authorName = array_shift($options);
 
         $query->contain(['Comments' => function ($q) use ($authorName) {
-            return $q->find('all', ['Comments.author' => $authorName]);
+            return $q->andWhere([
+                'Comments.author' => $authorName,
+            ]);
         }]);
         return $query;
+    }
 
+    /**
+     * Custom finder that filters Comments on all Posts to within the last week.
+     *
+     * Usage: `$Posts->find('recent');`
+     *
+     * @param \Cake\ORM\Query $query The query to find with.
+     * @param  array $options First element expected to be a Comment.author.
+     * @return \Cake\ORM\Query The modified query.
+     */
+    public function findRecent(Query $query, array $options)
+    {
+        $query->contain(['Comments' => function ($q) {
+            return $q->andWhere([
+                'Comments.published_date >=' => new Time('7 days ago'),
+            ]);
+        }]);
+        return $query;
     }
 }
