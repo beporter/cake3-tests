@@ -14,7 +14,7 @@ A demonstration CakePHP 3.x codebase to illustrate and work through some limitat
 
 ## Current Issues
 
-**tl;dr: See [`PostsTableTest::testFindCommenterAndFindRecent()`]().**
+**tl;dr: See [`PostsTableTest::testFindCommenterAndFindRecent()`](https://github.com/beporter/cake3-tests/blob/d33fdfef271171d156e87527afc281cce287fbf5/tests/TestCase/Model/Table/PostsTableTest.php#L148).**
 
 If you know how to resolve any of these issues, please feel free to post an Issue, or if you're feeling really charitable, submit a pull request.
 
@@ -77,7 +77,7 @@ Now when you try to compose these together, you end up with only the _last_ `con
 
 ### Extracting sub-entity keys
 
-**tl;dr: See [`PostsTableTest::testResultSetExtract()`]().**
+**tl;dr: See [`PostsTableTest::testResultSetExtract()`](https://github.com/beporter/cake3-tests/blob/d33fdfef271171d156e87527afc281cce287fbf5/tests/TestCase/Model/Table/PostsTableTest.php#L179).**
 
 So assume for a moment that the compose query above actually returns a `$resultSet`.
 
