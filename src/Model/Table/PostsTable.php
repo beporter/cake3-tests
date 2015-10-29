@@ -22,11 +22,19 @@ class PostsTable extends Table
      */
     public function initialize(array $config)
     {
+        parent::initialize($config);
+
         $this->table('posts');
         $this->displayField('title');
         $this->primaryKey('id');
+
         $this->hasMany('Comments', [
             'foreignKey' => 'post_id'
+        ]);
+        $this->belongsToMany('Tags', [
+            'foreignKey' => 'post_id',
+            'targetForeignKey' => 'tag_id',
+            'joinTable' => 'posts_tags'
         ]);
     }
 
