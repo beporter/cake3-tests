@@ -112,11 +112,25 @@ $authors = $resultSet->extract('{n}.comments.{n}.author')->toArray();
 
 **tl;dr: See [`PostsTableTest::testSaveNewPostWithTags()`](https://github.com/beporter/cake3-tests/blob/bf99468/tests/TestCase/Model/Table/PostsTableTest.php#L190).**
 
-Let's say I `Posts`, and `Tags`. Posts can be assigned many Tags, and Tags can be re-used on many Posts. This is a classic belongsToMany relationship, and is represented in the database using a "glue" table, conventionally named `posts_tags` and containing at minimum a `post_id` and a `tag_id`.
+Let's say I have `Posts`, and `Tags`. Posts can be assigned many Tags, and Tags can be re-used on many Posts. This is a classic belongsToMany relationship, and is represented in the database using a "glue" table, conventionally named `posts_tags` and containing at minimum a `post_id` and a `tag_id`.
 
 But what if our **Tags** have additional properties? Save for example that like StackOverflow, some of our Tags are "sponsored" and we need to present them in the finished app separately from "unsponsored" Tags.
 
-Well, we could add a boolean field to the Tags table call `is_sponsored` and use it to indicate which "bucket" a Tag belongs to. Then, for the sake of easy filtering and look up, we can define a few custom associations in the `PostsTable`:
+Well, we could add a boolean field to the Tags table call `is_sponsored` and use it to indicate which "bucket" a Tag belongs to.
+
+```sql
+# Dump of table tags
+# ------------------------------------------------------------
+
+CREATE TABLE `tags` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) NOT NULL DEFAULT '' COMMENT 'Display name of the Tag.',
+  `is_sponsored` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'Like StackOverflow, some tags can come from sponsors and need to be displayed and handled separately.',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Available Tags for assignment to Posts. Some tags are from sponsors.';
+```
+
+Then, for the sake of easy filtering and look up, we can define a few custom associations in the `PostsTable`:
 
 ```php
     public function initialize(array $config)
@@ -169,7 +183,6 @@ We must remember to also make these accessible in our Entity:
 ```php
 class Post extends Entity
 {
-
     /**
      * Fields that can be mass assigned using newEntity() or patchEntity().
      *
@@ -193,7 +206,11 @@ Take this example request data array:
 ```php
 $data = [
     'title' => 'Post with sponsored and unsponsored tags',
-    'body' => 'This demonstrates request data where default (baked) multi-select inputs have been used for `sponsored_tags._ids` and `unsponsored_tags._ids`.',
+    'body' => '
+        This demonstrates request data where default (baked) multi-select
+        inputs have been used for `sponsored_tags._ids` and
+        `unsponsored_tags._ids`.
+    ',
     'sponsored_tags' => [
         '_ids' => [
             4, // Loadsys
@@ -208,7 +225,7 @@ $data = [
 ];
 ```
 
-In our controller, we would of course have to remember to tell the ORM that we want it to save this related data:
+In our controller, we would of course have to remember to tell the ORM that we want it to retain this related data:
 
 ```php
 $entityOptions = [
@@ -226,7 +243,8 @@ $result = $this->Posts->save($entity);
 ...which produces the following error:
 
 ```shell
-PDOException: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'SponsoredTags.is_sponsored' in 'where clause'
+PDOException: SQLSTATE[42S22]: Column not found:
+  1054 Unknown column 'SponsoredTags.is_sponsored' in 'where clause'
 
 ROOT/vendor/cakephp/cakephp/src/Database/Statement/MysqlStatement.php:36
 ROOT/vendor/cakephp/cakephp/src/Database/Connection.php:270
@@ -250,7 +268,23 @@ ROOT/vendor/cakephp/cakephp/src/ORM/Table.php:1378
 ROOT/tests/TestCase/Model/Table/PostsTableTest.php:214
 ```
 
-...which obviously is wrong and bad.
+The SQL query being executed looks like this:
+
+```sql
+SELECT
+    PostsTags.post_id AS `PostsTags__post_id`,
+    PostsTags.tag_id AS `PostsTags__tag_id`
+FROM
+    posts_tags PostsTags
+WHERE
+    (post_id = :c0 AND SponsoredTags.is_sponsored = :c1)
+```
+
+...which obviously is wrong and bad because there's no `JOIN` on `Tags AS SponsoredTags` in there that would make the `is_sponsored` field available for use in the `WHERE` clause.
+
+
+---
+
 
 The source of this error is in [`\Cake\ORM\Assoiation\BelongsToMany::replaceLinks()`](https://github.com/cakephp/cakephp/blob/084ef76/src/ORM/Association/BelongsToMany.php#L761):
 
@@ -271,7 +305,8 @@ The source of this error is in [`\Cake\ORM\Assoiation\BelongsToMany::replaceLink
                     ->where(array_combine($foreignKey, $primaryValue));
                 $associationConditions = $this->conditions();
                 if ($associationConditions) {
-                    $existing->andWhere($associationConditions);  // <--- !! RIGHT HERE !!
+// !! RIGHT HERE !!
+                    $existing->andWhere($associationConditions);
                 }
                 $jointEntities = $this->_collectJointEntities($sourceEntity, $targetEntities);
                 $inserts = $this->_diffLinks($existing, $jointEntities, $targetEntities);
@@ -297,7 +332,7 @@ The source of this error is in [`\Cake\ORM\Assoiation\BelongsToMany::replaceLink
 
 This method is intended to delete, add or update any records in the join table in order to make them "match" with the set of IDs provided in our `Table::save()` call. The conditions in this case are **necessary**. Without them, we'd wipe out any existing `unsponsored` link records when we saved the updated list of `sponsored` records, and vice versa. We need to make sure we **only** operate on those `PostsTags` records where the `post_id` matches our new record from the `Table::save()`, but _also_ where the associated `Tag.is_sponsored` is either specifically `true` or `false`.
 
-The solution seems to be that `::replaceLinks()` needs to `->contain()` the necessary tables when they are detected in the `$associationConditions` array. (Doing so every time may be ill-advised for a number of reasons.
+The solution seems to be that `::replaceLinks()` needs to `->contain()` the necessary tables when they are detected in the `$associationConditions` array. (Doing so every time may be ill-advised for a number of reasons.)
 
 
 
