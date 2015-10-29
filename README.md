@@ -110,7 +110,7 @@ $authors = $resultSet->extract('{n}.comments.{n}.author')->toArray();
 
 ### Applying [conditions] using the "far" table in a belongsToMany relationship.
 
-**tl;dr: See [`PostsTableTest::testSaveNewPostWithTags()`](https://github.com/beporter/cake3-tests/blob/xxxxx/tests/TestCase/Model/Table/PostsTableTest.php#L190).**
+**tl;dr: See [`PostsTableTest::testSaveNewPostWithTags()`](https://github.com/beporter/cake3-tests/blob/bf99468/tests/TestCase/Model/Table/PostsTableTest.php#L190).**
 
 Let's say I `Posts`, and `Tags`. Posts can be assigned many Tags, and Tags can be re-used on many Posts. This is a classic belongsToMany relationship, and is represented in the database using a "glue" table, conventionally named `posts_tags` and containing at minimum a `post_id` and a `tag_id`.
 
