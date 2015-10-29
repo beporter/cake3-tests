@@ -36,6 +36,27 @@ class PostsTable extends Table
             'targetForeignKey' => 'tag_id',
             'joinTable' => 'posts_tags'
         ]);
+
+        // Convenience associations. Groups any associated Tags into
+        // "sponsored" and "unsponsored" buckets.
+        $this->belongsToMany('SponsoredTags', [
+            'className' => 'Tags',
+            'foreignKey' => 'post_id',
+            'targetForeignKey' => 'tag_id',
+            'joinTable' => 'posts_tags',
+            'conditions' => [
+                'SponsoredTags.is_sponsored' => true,
+            ],
+        ]);
+        $this->belongsToMany('UnsponsoredTags', [
+            'className' => 'Tags',
+            'foreignKey' => 'post_id',
+            'targetForeignKey' => 'tag_id',
+            'joinTable' => 'posts_tags',
+            'conditions' => [
+                'SponsoredTags.is_sponsored' => false,
+            ],
+        ]);
     }
 
     /**

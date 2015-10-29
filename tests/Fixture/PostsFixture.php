@@ -51,5 +51,15 @@ class PostsFixture extends TestFixture
             'title' => 'Post with Comments from Single author',
             'body' => 'This Post has comments exclusively from a single author.'
         ],
+
+        [
+            'id' => 4,
+            'title' => 'Cake 3 belongsToMany with conditions',
+            'body' => 'This post has multiple Tags associated with it.
+
+            Some are "sponsored" and some are not. To make it easy to "group" these Tags into two buckets, the PostsTable defines two "convenience" associations in addition to the default `belongsToMany(Tags)` relationship: `SponsoredTags` and `UnsponsoredTags`
+
+            If a belongsToMany relationship tries to use a [conditions] clause that uses a field from the "far" table (in this case, `Tags.is_sponsored`, then the `BelongsToMany::replaceLinks()` call will fail because that condition will be added into the SELECT looking for existing joining records, but the two joined tables (`Posts` and `Tags`) will not be included in the SELECT query.'
+        ],
     ];
 }

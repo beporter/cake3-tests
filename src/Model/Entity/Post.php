@@ -18,5 +18,8 @@ class Post extends Entity
         'title' => true,
         'body' => true,
         'comments' => true,
+        'tags' => true,
+        'sponsored_tags' => true,
+        'unsponsored_tags' => true,
     ];
 }

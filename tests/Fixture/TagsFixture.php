@@ -38,8 +38,28 @@ class TagsFixture extends TestFixture
     public $records = [
         [
             'id' => 1,
-            'name' => 'Lorem ipsum dolor sit amet'
+            'name' => 'PHPUnit',
             'is_sponsored' => 0,
+        ],
+        [
+            'id' => 2,
+            'name' => 'bugs',
+            'is_sponsored' => 0,
+        ],
+        [
+            'id' => 3,
+            'name' => 'orm',
+            'is_sponsored' => 0,
+        ],
+        [
+            'id' => 4,
+            'name' => 'Loadsys',
+            'is_sponsored' => 1,
+        ],
+        [
+            'id' => 5,
+            'name' => 'CakePHP',
+            'is_sponsored' => 1,
         ],
     ];
 }
