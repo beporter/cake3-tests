@@ -20,7 +20,9 @@ class PostsTableTest extends TestCase
      */
     public $fixtures = [
         'app.posts',
-        'app.comments'
+        'app.comments',
+        'app.tags',
+        'app.posts_tags',
     ];
 
     /**
@@ -177,6 +179,43 @@ class PostsTableTest extends TestCase
             $expected,
             $results->extract('{n}.comments.{n}.author')->toArray(),
             'Why doesn\'t CollectionTrait::extract() work on sub-Entities?? What incantation is necessary to make this work?'
+        );
+    }
+
+    /**
+     * Test saving a new Post entity that has "convenience" tags.
+     *
+     * @return void
+     */
+    public function testSaveNewPostWithTags()
+    {
+        $data = [
+            'title' => 'Post with sponsored and unsponsored tags',
+            'body' => 'This demonstrates request data where the default multi-select inputs have been used for `sponsored_tags._ids` and `unsponsored_tags._ids`.',
+            'sponsored_tags' => [
+                '_ids' => [
+                    4, // Loadsys
+                ],
+            ],
+            'unsponsored_tags' => [
+                '_ids' => [
+                    2, // bugs
+                    3, // orm
+                ],
+            ],
+        ];
+        $entityOptions = [
+            'associated' => ['SponsoredTags', 'UnsponsoredTags'],
+        ];
+        $entity = $this->Posts->newEntity($data, $entityOptions);
+
+        $saveOptions = [];
+        $result = $this->Posts->save($entity, $saveOptions);
+
+        $this->assertInstanceOf(
+            '\Cake\ORM\Entity',
+            $result,
+            'The save errors out with an ORM error in BelongsToMany::replaceLinks().'
         );
     }
 }
