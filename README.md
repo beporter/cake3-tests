@@ -114,7 +114,7 @@ $authors = $resultSet->extract('{n}.comments.{n}.author')->toArray();
 
 Let's say I have `Posts`, and `Tags`. Posts can be assigned many Tags, and Tags can be re-used on many Posts. This is a classic belongsToMany relationship, and is represented in the database using a "glue" table, conventionally named `posts_tags` and containing at minimum a `post_id` and a `tag_id`.
 
-But what if our **Tags** have additional properties? Save for example that like StackOverflow, some of our Tags are "sponsored" and we need to present them in the finished app separately from "unsponsored" Tags.
+But what if our **Tags** have additional properties? Say for example that like StackOverflow, some of our Tags are "sponsored" and we need to present them in the finished app separately from "unsponsored" Tags.
 
 Well, we could add a boolean field to the Tags table call `is_sponsored` and use it to indicate which "bucket" a Tag belongs to.
 
@@ -240,7 +240,7 @@ And then we save it:
 $result = $this->Posts->save($entity);
 ```
 
-...which produces the following error:
+**...which produces the following error:**
 
 ```shell
 PDOException: SQLSTATE[42S22]: Column not found:
@@ -330,10 +330,9 @@ The source of this error is in [`\Cake\ORM\Assoiation\BelongsToMany::replaceLink
     }
 ```
 
-This method is intended to delete, add or update any records in the join table in order to make them "match" with the set of IDs provided in our `Table::save()` call. The conditions in this case are **necessary**. Without them, we'd wipe out any existing `unsponsored` link records when we saved the updated list of `sponsored` records, and vice versa. We need to make sure we **only** operate on those `PostsTags` records where the `post_id` matches our new record from the `Table::save()`, but _also_ where the associated `Tag.is_sponsored` is either specifically `true` or `false`.
+This method is intended to delete, add or update any records in the join table in order to make them "match" with the set of IDs provided in our `Table::save()` call. Preserving the conditions through this process in this case **is necessary**. Without them, we'd wipe out any existing `unsponsored` link records when we saved the updated list of `sponsored` records, and vice versa. We need to make sure we **only** operate on those `PostsTags` records where the `post_id` matches our new record from the `Table::save()` like always, but _also_ where the associated `Tag.is_sponsored` is either specifically `true` or `false`.
 
-The solution seems to be that `::replaceLinks()` needs to `->contain()` the necessary tables when they are detected in the `$associationConditions` array. (Doing so every time may be ill-advised for a number of reasons.)
-
+The solution seems to be that `::replaceLinks()` needs to `->contain()` the target table when conditions are present so all possible fields that are relevant to the association are available for use. (However, doing this for _every_ association may be ill-advised for a number of reasons, hence restricting it to only those times when conditions are present that might involve the target table.)
 
 
 ## License
